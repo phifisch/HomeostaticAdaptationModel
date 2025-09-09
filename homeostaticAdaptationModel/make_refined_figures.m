@@ -32,15 +32,17 @@ end
 
 % get the slice where C_theta is unchanged, varying only APL and excitation
 compare_Weights_alpha = compareAllParams(:,:,find(thetaFactors==1) );
+compare_Thetas_alpha = squeeze(compareAllParams(find(weightsFactors==1),:,:));
 
 % zoom in on the area below 1 (and take some surroundings)
 APL_cutoff = find(alphaFactors<=1.1, 1, "last");
 Excit_cutoff = find(weightsFactors<=1.10, 1, "last");
-theta_cutoff= find(thetaFactors>=0., 1, "first");
+theta_cutoff= find(thetaFactors>=0.8, 1, "first");
 reducedSet = struct('compare_Weights_alpha', compare_Weights_alpha(1:Excit_cutoff, 1:APL_cutoff), ...
+                    'compare_Thetas_alpha', compare_Thetas_alpha(1:APL_cutoff, theta_cutoff:end), ...
                     'alphaFactors',alphaFactors(1:APL_cutoff), ...
                     'weightsFactors',weightsFactors(1:Excit_cutoff), ...
-                    'thetaFactors', thetaFactors(theta_cutoff:end-10),...
+                    'thetaFactors', thetaFactors(theta_cutoff:end),...
                     'compare_Weights_theta', compareAllParams(1:Excit_cutoff,find(alphaFactors==1),theta_cutoff:end-10) );
 
 %% Compare the effect of reducing weights and changing alpha 
@@ -64,12 +66,16 @@ fig = figure;
 mylevels = [0.0:0.5:13]; % fits the homeostatic models
 % mylevels = [0.0002:0.4:17];
 % mylevels = 10.^([-6:0.2:1.2])
-contourf(X,Y, reducedSet.compare_Weights_alpha'/1000, mylevels, 'LineWidth',0.5)
+contourf(X,Y, reducedSet.compare_Weights_alpha'/1000, mylevels, 'LineWidth',1.)
 cmap = parula(length(mylevels));
 % cmap(1,:) = [.3,.3,.3];
 % colormap(cmap)
 colorbar
+axis square
 hold on
+% add a large marker for the "normal setpoint" at [1, 1]
+scatter(gca, 1.,1., 400, 's', 'MarkerEdgeColor', 'k', 'LineWidth',1, 'MarkerFaceColor', '#62256f', 'MarkerFaceAlpha',0.8 )
+
 smallerLevels = [0:0.1:1];
 % [m,c] = contourf(X,Y, reducedSet.compare_Weights_alpha'/1000, smallerLevels,...
     % 'w--','FaceAlpha',0);
@@ -78,6 +84,9 @@ smallerLevels = [0:0.1:1];
 xlabel('weights multiplied by factor')
 ylabel('alpha multiplied by factor')
 title('total KC response for a given odor (mean of 30 trials) depending on excitatory strength and APL gain')
+
+xlim([0.5, 1.1])
+xticks([0.6:0.2:1])
 
 save_figure_perhaps(fig, 'ExcWeights-APLgain_totalKCresp_1odor_contour_reducedSize');
 
@@ -190,6 +199,41 @@ xlim(axExcitconst,[0,reducedSet.alphaFactors(end)])
 
 save_figure_perhaps(fig, 'ExcWeights-APLgain_totalKCresp_1odor_contour_reducedSize_fancyVersion2');
 
+%% Same contour map, but for Alpha vs C_theta
+fig = figure;
+% imagesc(weightsFactors, alphaFactors, compare_Weights_alpha')
+[X,Y] = meshgrid(reducedSet.thetaFactors,reducedSet.alphaFactors);
+% mylevels = [0.0:0.2:4.4]; % fits the non-homeostatic models
+mylevels = [0.0: 1.: 19]; % fits the homeostatic models
+% mylevels = [0.0002:0.4:17];
+% mylevels = 10.^([-6:0.2:1.2])
+contourf(X,Y, reducedSet.compare_Thetas_alpha/1000, mylevels, 'LineWidth',1.)
+cmap = parula(length(mylevels));
+% cmap(1,:) = [.3,.3,.3];
+% colormap(cmap)
+colorbar
+axis square
+hold on
+% add a large marker for the "normal setpoint" at [1, 1]
+scatter(gca, 1.,1., 400, 's', 'MarkerEdgeColor', 'k', 'LineWidth',1.2, 'MarkerFaceColor', '#62256f', 'MarkerFaceAlpha',0.8 )
+
+smallerLevels = [0:0.1:1];
+% [m,c] = contourf(X,Y, reducedSet.compare_Weights_alpha'/1000, smallerLevels,...
+    % 'w--','FaceAlpha',0);
+% contourf(X,Y, reducedSet.compare_Weights_alpha'/1000, 25, "ShowText",true,"LabelFormat","%0.2f")
+
+xlabel('firing threshold multiplied by factor')
+
+ylabel('alpha multiplied by factor')
+yticks(0:0.2:1.1)
+title('total KC response for a given odor (mean of 30 trials) depending on excitatory strength and APL gain')
+
+set(get(gca,'xaxis'),'direction','reverse')
+set(gca,'FontSize',12)
+set(gca,'FontName','Arial')
+
+save_figure_perhaps(fig, 'ExcWeights-APLgain_totalKCresp_1odor_contour_reducedSize_fancyVersion2');
+
 
 %% Compare the effect of changing weights and changing theta
 
@@ -268,7 +312,8 @@ barplotResponses = struct();
 % unmodified (vanilla) model responses
 barplotResponses.vanillaResponses = get_modified_MBmodel_responses(MBmodels_allVar,...
                 testedOdors,struct('APLgain',1,'ExcIn',1));
-% disinhibit model with original parameters
+% disinhibit mo
+% del with original parameters
 barplotResponses.vanillaDisinh = get_modified_MBmodel_responses(MBmodels_allVar,...
                 testedOdors,struct('APLgain',0,'ExcIn',1));
 

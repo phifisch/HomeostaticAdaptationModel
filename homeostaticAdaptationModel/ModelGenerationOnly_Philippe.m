@@ -72,7 +72,6 @@ for randomTrials=1:numModelInstances
     PNtrials = rescale(PNtrials,0,5);
     PNtrials = reshape(PNtrials, size(PNtrials,1),[]); %make 2-D
     
-    %start the parallel pool
 	%% begin optimisation procedure to get C_theta and APLgain values that satisfy coding level constraints
 	% for the variable weight, variable theta model.
 
